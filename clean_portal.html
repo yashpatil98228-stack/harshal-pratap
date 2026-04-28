@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pratap Vidhya Mandir - CMS</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            mint: {
+              DEFAULT: '#98FB98',
+              dark: '#7be17b'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --mint-green: #98FB98;
+      --mint-dark: #7be17b;
+      --background: #f4fdf4;
+    }
+    body {
+      background-color: var(--background);
+      color: #333333;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    .animate-fade-in-scale {
+      animation: fadeInScale 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    @keyframes fadeInScale {
+      0% { opacity: 0; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 8px 32px rgba(152, 251, 152, 0.15);
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .skeleton-shimmer {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 2s infinite linear;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #98FB98;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const Skeleton = ({ type, count = 1 }) => {
+      const items = Array.from({ length: count });
+      if (type === 'stat') return (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {items.map((_, i) => (
+            <div key={i} className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
+               <div className="w-12 h-12 skeleton-shimmer rounded-2xl mb-4"></div>
+               <div className="h-3 skeleton-shimmer rounded-full w-1/2 mb-3"></div>
+               <div className="h-8 skeleton-shimmer rounded-2xl w-1/3"></div>
+            </div>
+          ))}
+        </div>
+      );
+      return <div className="h-20 skeleton-shimmer rounded-[30px] w-full mb-4"></div>;
+    };
+
+    const SplashScreen = ({ onComplete }) => {
+      useEffect(() => {
+        const timer = setTimeout(() => onComplete(), 2500);
+        return () => clearTimeout(timer);
+      }, []);
+      return (
+        <div className="fixed inset-0 min-h-screen bg-white flex flex-col items-center justify-center z-50">
+          <div className="animate-fade-in-scale flex flex-col items-center gap-4 text-center">
+            <div className="bg-black p-4 rounded-full border-4 border-[#bf953f] shadow-2xl mb-4">
+                <img src="https://pratapvidyamandirchopda.org/newlogo.jpg" alt="Logo" className="w-40 h-40 object-contain" style={{ mixBlendMode: 'screen' }} />
+            </div>
+            <h1 className="text-4xl font-extrabold text-gray-800 tracking-wider">Pratap Vidhya Mandir</h1>
+            <p className="text-[#bf953f] font-bold uppercase tracking-[0.3em] text-sm italic">100 Years of Excellence</p>
+          </div>
+        </div>
+      );
+    };
+
+    const Login = ({ onLoginSuccess }) => {
+      const [id, setId] = useState('');
+      const [password, setPassword] = useState('');
+      const [error, setError] = useState('');
+      const [lang, setLang] = useState('en');
+
+      const translations = {
+        en: { title: 'Portal Registry', id: 'Official ID', pass: 'Password', btn: 'Secure Login →', error: 'Invalid Credentials.' },
+        mr: { title: 'पोर्टल नोंदणी', id: 'अधिकृत आयडी', pass: 'पासवर्ड', btn: 'सुरक्षित लॉगिन →', error: 'चुकीची माहिती.' },
+        hi: { title: 'पोर्टल पंजीकरण', id: 'आधिकारिक आईडी', pass: 'पासवर्ड', btn: 'सुरक्षित लॉगिन →', error: 'अमान्य क्रेडेंशियल.' }
+      };
+
+      const t = translations[lang];
+
+      const handleLogin = (e) => {
+        e.preventDefault();
+        try {
+          const allUsers = JSON.parse(localStorage.getItem('pvm_users') || '[]');
+          
+          // Debugging log so you can inspect in console if needed:
+          console.log("Attempting Login with ID:", id, "Pass:", password);
+          
+          const foundUser = allUsers.find(u => 
+            u && u.id && 
+            String(u.id).trim().toUpperCase() === String(id).trim().toUpperCase() && 
+            String(u.password) === String(password)
+          );
+
+          if (foundUser) {
+            if (foundUser.blocked) {
+              setError('ACCESS DENIED: Account Blocked.');
+              return;
+            }
+            onLoginSuccess(foundUser);
+          } else {
+            setError(t.error);
+          }
+        } catch (err) {
+          console.error("Login Error:", err);
+          setError("System Error: Please clear browser cache.");
+        }
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden bg-[#0a0a0a]">
+          <div className="absolute inset-0 z-0">
+             <img src="https://upload.wikimedia.org/wikipedia/commons/9/9a/Pratap_Vidya_Mandir_Chopda_%28Photograph_by_Swapnil_Potdar%29.jpg" className="w-full h-full object-cover opacity-60 blur-sm scale-110" alt="Campus" />
+             <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-transparent to-black/40"></div>
+          </div>
+
+          <div className="absolute top-8 right-8 z-20 flex gap-2">
+             {['en', 'mr', 'hi'].map(l => (
+               <button key={l} onClick={()=>setLang(l)} className={`px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${lang === l ? 'bg-mint text-gray-900 shadow-xl scale-110' : 'bg-white/10 text-white hover:bg-white/20'}`}>
+                 {l === 'en' ? 'English' : (l === 'mr' ? 'मराठी' : 'हिंदी')}
+               </button>
+             ))}
+          </div>
+
+          <div className="sm:mx-auto sm:w-full sm:max-w-md z-10 animate-fade-in-scale">
+             <div className="bg-white/90 backdrop-blur-xl px-10 py-12 rounded-[50px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] border-t-8 border-mint relative overflow-hidden">
+                <div className="absolute -top-24 -right-24 w-48 h-48 bg-mint/20 rounded-full blur-3xl"></div>
+                <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-mint/10 rounded-full blur-3xl"></div>
+                
+                <div className="flex justify-center mb-8 relative">
+                    <div className="bg-black p-4 rounded-3xl shadow-2xl border-2 border-[#bf953f]">
+                      <img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-20 h-20 object-contain" alt="Logo" style={{ mixBlendMode: 'screen' }} />
+                    </div>
+                </div>
+                
+                <h2 className="text-center text-3xl font-black text-gray-900 tracking-tighter uppercase italic mb-2">{t.title}</h2>
+                <div className="w-16 h-1.5 bg-mint mx-auto mb-10 rounded-full"></div>
+
+                <form className="space-y-6" onSubmit={handleLogin}>
+                   <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">{t.id}</label>
+                      <input type="text" placeholder="e.g. STU01" className="w-full p-5 bg-gray-50 border-2 border-transparent focus:border-mint focus:bg-white rounded-[25px] font-bold transition-all outline-none" value={id} onChange={e=>setId(e.target.value)} required />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">{t.pass}</label>
+                      <input type="password" placeholder="••••••••" className="w-full p-5 bg-gray-50 border-2 border-transparent focus:border-mint focus:bg-white rounded-[25px] font-bold transition-all outline-none" value={password} onChange={e=>setPassword(e.target.value)} required />
+                   </div>
+                   {error && (
+                     <div className="bg-red-50 text-red-500 p-4 rounded-2xl text-[10px] font-black text-center uppercase tracking-widest border border-red-100 animate-shake">
+                        ⚠️ {error}
+                     </div>
+                   )}
+                   <button type="submit" className="w-full bg-gray-900 text-white py-6 rounded-[30px] font-black tracking-[0.2em] uppercase hover:bg-black hover:scale-[1.02] active:scale-95 transition-all shadow-2xl shadow-mint/20">
+                      {t.btn}
+                   </button>
+                </form>
+                
+                <p className="mt-8 text-center text-[8px] font-black text-gray-400 uppercase tracking-[0.3em] opacity-50">Pratap Vidhya Mandir • Centenary Digital Infrastructure</p>
+             </div>
+          </div>
+        </div>
+      );
+    };
+
+    const ProfileModal = ({ isOpen, onClose, data }) => {
+      if (!isOpen) return null;
+      return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-[40px] w-full max-w-sm overflow-hidden shadow-2xl animate-fade-in-scale">
+            <div className="h-24 bg-mint"></div>
+            <div className="px-8 pb-10 text-center -mt-12">
+              <img src={data.image} className="w-32 h-32 rounded-[30px] mx-auto border-8 border-white shadow-xl bg-white" alt="User" />
+              <h3 className="mt-4 text-2xl font-black text-gray-900">{data.name}</h3>
+              <p className="text-mint-dark font-black uppercase text-[10px] tracking-[0.3em]">{data.role}</p>
+              <div className="mt-8 space-y-4 text-left border-t pt-8">
+                <div className="flex justify-between font-bold text-sm"><span className="text-gray-400 uppercase tracking-widest text-[10px]">Portal ID</span><span className="text-gray-900">{data.id}</span></div>
+                <div className="flex justify-between font-bold text-sm"><span className="text-gray-400 uppercase tracking-widest text-[10px]">Standard</span><span className="text-gray-900">{data.class}</span></div>
+              </div>
+              <button onClick={onClose} className="mt-10 w-full bg-gray-900 text-white py-4 rounded-3xl font-black uppercase tracking-widest hover:bg-black transition-all">Close Info</button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const CircleChart = ({ label, percentage }) => (
+      <div className="p-6 bg-white rounded-3xl border border-gray-100 flex flex-col items-center hover:shadow-lg transition-all">
+        <div className="relative w-24 h-24 mb-3">
+          <svg className="w-full h-full rotate-[-90deg]" viewBox="0 0 36 36">
+            <circle cx="18" cy="18" r="16" fill="none" stroke="#f3f4f6" strokeWidth="4" />
+            <circle cx="18" cy="18" r="16" fill="none" stroke="#98FB98" strokeWidth="4" strokeDasharray={`${percentage}, 100`} strokeLinecap="round" />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center font-black text-gray-800 text-lg">{percentage}%</div>
+        </div>
+        <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{label}</span>
+      </div>
+    );
+
+    const TeacherDashboard = ({ onLogout, user, onAddStudent }) => {
+      const [view, setView] = useState('overview');
+      const [submitted, setSubmitted] = useState(false);
+
+      const navItems = [
+        { key: 'overview',    icon: '🏠', label: 'Daily Schedule' },
+        { key: 'attendance',  icon: '📅', label: 'Take Attendance' },
+        { key: 'register',    icon: '👤', label: 'Register Student' },
+        { key: 'upload',      icon: '📂', label: 'Upload Docs' },
+        { key: 'schedule',    icon: '📆', label: 'My Schedule' },
+        { key: 'profile',     icon: '🧑‍🏫', label: 'About Me' },
+      ];
+
+      const handleRegister = (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        onAddStudent({
+          id: fd.get('studentId').toUpperCase(),
+          password: fd.get('password'),
+          name: fd.get('name'),
+          role: 'student',
+          class: fd.get('standard') + 'th Standard - Div ' + fd.get('div'),
+          image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${fd.get('name')}`,
+          parentPhone: fd.get('parentPhone'),
+        });
+        alert('✅ Student Registered Successfully!');
+        e.target.reset();
+        setView('overview');
+      };
+
+      const schedule = [
+        { time: '7:00 AM', subject: 'Marathi', room: 'G-12' },
+        { time: '8:00 AM', subject: 'Hindi', room: 'G-12' },
+        { time: '9:00 AM', subject: 'English', room: 'G-12' },
+        { time: '10:00 AM', subject: 'Maths', room: 'G-12' },
+        { time: '11:00 AM', subject: 'Science', room: 'Lab-2' },
+        { time: '12:00 PM', subject: 'Social Science', room: 'G-12' },
+      ];
+
+      return (
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+          <header className="bg-white border-b-4 border-gray-900 p-4">
+            <div className="max-w-7xl mx-auto flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-12 h-12 bg-black p-1 rounded-xl" alt="Logo" style={{ mixBlendMode: 'multiply' }} />
+                <div>
+                  <h1 className="font-black text-xl tracking-tight italic">Faculty Portal</h1>
+                  <p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Pratap Vidhya Mandir</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-[10px] font-black text-gray-500 uppercase">{user.name}</span>
+                <button onClick={onLogout} className="text-red-500 font-black text-xs uppercase tracking-widest border-2 border-red-400 px-3 py-1 rounded-xl hover:bg-red-500 hover:text-white transition-all">Exit</button>
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-7xl mx-auto px-4 py-8 w-full flex-1">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+              {/* LEFT SIDEBAR */}
+              <div className="lg:col-span-3 space-y-3">
+                {navItems.map(n => (
+                  <div key={n.key} onClick={() => setView(n.key)}
+                    className={`p-4 rounded-2xl cursor-pointer transition-all border-b-4 flex items-center gap-3 ${view === n.key ? 'bg-gray-900 text-white border-gray-700 shadow-xl' : 'bg-white text-gray-500 border-gray-100 hover:bg-gray-50'}`}>
+                    <span className="text-2xl">{n.icon}</span>
+                    <span className="font-black text-[11px] uppercase tracking-wider">{n.label}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* RIGHT CONTENT */}
+              <div className="lg:col-span-9 space-y-6">
+
+                {/* OVERVIEW - Daily Schedule */}
+                {view === 'overview' && (
+                  <div className="space-y-6 animate-fade-in-scale">
+                    <div className="bg-gray-900 p-10 rounded-[40px] text-white shadow-2xl">
+                      <h2 className="text-4xl font-black italic tracking-tighter mb-2">Good Morning, {user.name.split(' ')[0]}! 👋</h2>
+                      <p className="text-gray-400 font-bold">Today's teaching overview for your class</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+                        <div className="bg-white/10 p-4 rounded-2xl"><p className="text-[10px] text-[#98FB98] uppercase font-black">Lectures Today</p><p className="text-3xl font-black">6</p></div>
+                        <div className="bg-white/10 p-4 rounded-2xl"><p className="text-[10px] text-[#98FB98] uppercase font-black">Total Students</p><p className="text-3xl font-black">60</p></div>
+                        <div className="bg-white/10 p-4 rounded-2xl"><p className="text-[10px] text-[#98FB98] uppercase font-black">Room</p><p className="text-3xl font-black">G-12</p></div>
+                        <div className="bg-white/10 p-4 rounded-2xl"><p className="text-[10px] text-[#98FB98] uppercase font-black">Academic Year</p><p className="text-3xl font-black">26-27</p></div>
+                      </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-[30px] shadow border border-gray-100">
+                      <h3 className="font-black text-gray-900 uppercase tracking-widest text-sm border-l-4 border-[#98FB98] pl-3 mb-6">📆 Today's Teaching Schedule</h3>
+                      <div className="divide-y divide-gray-50">
+                        {schedule.map((s, i) => (
+                          <div key={i} className="py-4 flex justify-between items-center hover:bg-gray-50 px-3 rounded-xl transition-all">
+                            <div className="flex items-center gap-4">
+                              <span className="w-8 h-8 bg-[#98FB98]/30 text-[#5acb5a] rounded-full flex items-center justify-center font-black text-sm">{i+1}</span>
+                              <span className="font-black text-gray-800">{s.subject}</span>
+                            </div>
+                            <div className="flex gap-3">
+                              <span className="text-xs bg-gray-100 px-3 py-1 rounded-xl font-bold text-gray-500">Room {s.room}</span>
+                              <span className="text-xs bg-[#98FB98]/20 text-[#5acb5a] px-3 py-1 rounded-xl font-black">{s.time}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ATTENDANCE */}
+                {view === 'attendance' && (
+                  <div className="animate-fade-in-scale bg-white p-8 rounded-[30px] shadow border border-gray-100">
+                    <div className="flex justify-between items-center mb-8 pb-4 border-b">
+                      <div>
+                        <h3 className="text-xl font-black text-gray-900 italic">📅 Live Attendance — Class G-12</h3>
+                        <p className="text-xs text-gray-400 mt-1 font-bold uppercase">Click A 🚨 to auto-send WhatsApp alert to parent</p>
+                      </div>
+                      <div className="flex gap-3">
+                        <button onClick={() => { if(confirm('Submit attendance & send all alerts?')) { setSubmitted(true); alert('✅ Attendance submitted! WhatsApp alerts sent to absent parents.'); }}}
+                          className="bg-gray-900 text-white px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg hover:bg-black transition-all">
+                          Submit ✅
+                        </button>
+                        <button onClick={() => { if(confirm('Release Results to all parents via WhatsApp?')) { alert('📢 Broadcasting result links to all registered WhatsApp numbers...'); }}}
+                          className="bg-[#98FB98] text-gray-900 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow hover:bg-green-400 transition-all">
+                          Release Results 📢
+                        </button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 max-h-[500px] overflow-y-auto pr-2">
+                      {Array.from({length: 60}).map((_, i) => (
+                        <div key={i} className="p-3 bg-gray-50 border border-gray-100 rounded-2xl flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-white border-2 border-[#98FB98] flex items-center justify-center font-black text-xs text-gray-700 mb-2">{i+1}</div>
+                          <p className="text-[9px] font-black text-gray-400 mb-3 text-center uppercase">Stu {i+1}</p>
+                          <div className="flex gap-1 w-full">
+                            <button className="flex-1 py-1.5 bg-[#98FB98]/50 text-green-900 rounded-lg text-[10px] font-black hover:bg-[#98FB98] transition-colors">P</button>
+                            <button onClick={() => {
+                              const msg = `🚨 ALERT: Your ward (Student ${i+1}) is ABSENT today at Pratap Vidhya Mandir. Please contact the class teacher.`;
+                              window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+                            }} className="flex-1 py-1.5 bg-red-100 text-red-800 rounded-lg text-[10px] font-black hover:bg-red-500 hover:text-white transition-all">A 🚨</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* REGISTER STUDENT */}
+                {view === 'register' && (
+                  <div className="animate-fade-in-scale max-w-2xl mx-auto bg-white p-10 rounded-[30px] shadow border border-gray-100">
+                    <h3 className="text-2xl font-black text-gray-900 mb-8 border-l-8 border-gray-900 pl-4 tracking-tighter">👤 New Student Enrollment</h3>
+                    <form onSubmit={handleRegister} className="space-y-5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Full Name</label>
+                          <input name="name" type="text" placeholder="Student Full Name" className="w-full p-4 bg-gray-50 rounded-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#98FB98]" required />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Portal ID</label>
+                          <input name="studentId" type="text" placeholder="e.g. STU02" className="w-full p-4 bg-gray-50 rounded-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#98FB98]" required />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Standard</label>
+                          <input name="standard" type="number" min="7" max="12" placeholder="7 to 12" className="w-full p-4 bg-gray-50 rounded-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#98FB98]" required />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Division</label>
+                          <input name="div" type="text" placeholder="e.g. A" className="w-full p-4 bg-gray-50 rounded-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#98FB98]" required />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Parent WhatsApp No</label>
+                          <input name="parentPhone" type="tel" placeholder="+91 XXXXXXXXXX" className="w-full p-4 bg-gray-50 rounded-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#98FB98]" required />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Password</label>
+                          <input name="password" type="password" placeholder="Set Login Passcode" className="w-full p-4 bg-gray-50 rounded-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#98FB98]" required />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Student Photo URL (optional)</label>
+                        <input name="photo" type="text" placeholder="Paste image URL or leave blank for auto-avatar" className="w-full p-4 bg-gray-50 rounded-2xl font-bold focus:outline-none focus:ring-2 focus:ring-[#98FB98]" />
+                      </div>
+                      <button className="w-full bg-gray-900 text-white py-5 rounded-3xl font-black tracking-widest uppercase hover:bg-black transition-all shadow-xl mt-4">Add to Master Database →</button>
+                    </form>
+                  </div>
+                )}
+
+                {/* UPLOAD DOCS */}
+                {view === 'upload' && (
+                  <div className="animate-fade-in-scale bg-white p-8 rounded-[30px] shadow border border-gray-100">
+                    <h3 className="text-2xl font-black text-gray-900 mb-8 border-l-8 border-gray-900 pl-4">📂 Upload Resources</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+                      {['Notes 📝', 'Assignment 📋', 'Project 🔬'].map((type, i) => (
+                        <div key={i} onClick={() => alert(`Upload ${type} module`)}
+                          className="p-8 bg-gray-50 border-2 border-dashed border-gray-200 rounded-[25px] flex flex-col items-center cursor-pointer hover:border-[#98FB98] hover:bg-[#98FB98]/5 transition-all">
+                          <span className="text-5xl mb-4">{['📝','📋','🔬'][i]}</span>
+                          <p className="font-black text-gray-700 uppercase text-sm tracking-wider">{['Notes', 'Assignment', 'Project'][i]}</p>
+                          <p className="text-xs text-gray-400 mt-2 font-bold">Click to upload</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Select Standard</label>
+                      <div className="flex flex-wrap gap-2">
+                        {[7,8,9,10,11,12].map(s => (
+                          <button key={s} className="px-4 py-2 bg-[#98FB98]/30 text-gray-800 rounded-xl font-black text-sm hover:bg-[#98FB98] transition-all">
+                            Std {s}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* SCHEDULE */}
+                {view === 'schedule' && (
+                  <div className="animate-fade-in-scale bg-white p-8 rounded-[30px] shadow border border-gray-100">
+                    <h3 className="text-2xl font-black text-gray-900 mb-8 border-l-8 border-gray-900 pl-4">📆 Weekly Schedule</h3>
+                    <div className="space-y-3">
+                      {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map((day, di) => (
+                        <div key={di} className="p-4 bg-gray-50 rounded-2xl flex items-center gap-4">
+                          <span className="font-black text-gray-400 w-24 text-xs uppercase tracking-widest">{day}</span>
+                          <div className="flex flex-wrap gap-2 flex-1">
+                            {schedule.map((s, i) => (
+                              <span key={i} className="px-3 py-1 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 shadow-sm">{s.subject}</span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ABOUT ME - Teacher Profile */}
+                {view === 'profile' && (
+                  <div className="animate-fade-in-scale max-w-lg mx-auto">
+                    <div className="bg-white rounded-[40px] overflow-hidden shadow-2xl border border-gray-100">
+                      <div className="h-28 bg-gray-900"></div>
+                      <div className="px-8 pb-10 text-center -mt-14">
+                        <img src={user.image} className="w-28 h-28 rounded-[25px] mx-auto border-8 border-white shadow-xl bg-white" alt="Teacher" />
+                        <h3 className="mt-4 text-2xl font-black text-gray-900">{user.name}</h3>
+                        <p className="text-[#5acb5a] font-black uppercase text-[10px] tracking-[0.3em] mt-1">Faculty • Pratap Vidhya Mandir</p>
+                        <div className="mt-8 space-y-4 text-left border-t pt-6">
+                          <div className="flex justify-between"><span className="text-gray-400 text-xs font-black uppercase tracking-widest">Portal ID</span><span className="font-black text-gray-900">{user.id}</span></div>
+                          <div className="flex justify-between"><span className="text-gray-400 text-xs font-black uppercase tracking-widest">Role</span><span className="font-black text-gray-900">Faculty</span></div>
+                          <div className="flex justify-between"><span className="text-gray-400 text-xs font-black uppercase tracking-widest">Class</span><span className="font-black text-gray-900">{user.class || 'G-12'}</span></div>
+                          <div className="flex justify-between"><span className="text-gray-400 text-xs font-black uppercase tracking-widest">Subjects</span><span className="font-black text-gray-900">Marathi, Maths</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </div>
+          </main>
+        </div>
+      );
+    };
+
+    const StudentDashboard = ({ onLogout, user }) => {
+      const [view, setView] = useState('overview');
+
+      const navItems = [
+        { key: 'overview',   icon: '🏠', label: 'Home' },
+        { key: 'attendance', icon: '📅', label: 'Attendance' },
+        { key: 'results',    icon: '📊', label: 'Results' },
+        { key: 'progress',   icon: '📈', label: 'Progress' },
+        { key: 'timetable',  icon: '🕒', label: 'Timetable' },
+        { key: 'notes',      icon: '📝', label: 'Notes & Syllabus' },
+        { key: 'teachers',   icon: '📞', label: 'Teachers' },
+        { key: 'profile',    icon: '🪪', label: 'About Me' },
+      ];
+
+      const schedule = [
+        { time: '7:00 AM', subject: 'Marathi', room: 'G-12', teacher: 'Prof. Patil' },
+        { time: '8:00 AM', subject: 'Hindi', room: 'G-12', teacher: 'Prof. Shah' },
+        { time: '9:00 AM', subject: 'English', room: 'G-12', teacher: 'Prof. Desai' },
+        { time: '10:00 AM', subject: 'Maths', room: 'G-12', teacher: 'Prof. Patil' },
+        { time: '11:00 AM', subject: 'Science', room: 'Lab-2', teacher: 'Prof. Kulkarni' },
+        { time: '12:00 PM', subject: 'Social Science', room: 'G-12', teacher: 'Prof. More' },
+      ];
+
+      const syllabus = {
+        'Marathi': ['Ch 1: कविता','Ch 2: गद्य','Ch 3: व्याकरण','Ch 4: निबंध'],
+        'Hindi': ['Ch 1: पद्य','Ch 2: गद्य','Ch 3: व्याकरण'],
+        'English': ['Ch 1: Prose','Ch 2: Poetry','Ch 3: Grammar'],
+        'Maths': ['Ch 1: Algebra','Ch 2: Geometry','Ch 3: Trigonometry'],
+        'Science': ['Ch 1: Physics','Ch 2: Chemistry','Ch 3: Biology'],
+        'Social Sc': ['Ch 1: History','Ch 2: Geography','Ch 3: Civics'],
+      };
+
+      return (
+        <div className="min-h-screen bg-[#f4fdf4] flex flex-col">
+          <header className="bg-gray-900 border-b-4 border-[#98FB98] p-4">
+            <div className="max-w-7xl mx-auto flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <div className="bg-black p-2 rounded-2xl border-2 border-[#bf953f]">
+                  <img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-10 h-10 object-contain" alt="Logo" style={{ mixBlendMode: 'screen' }} />
+                </div>
+                <div>
+                  <h1 className="font-black text-xl italic tracking-tight text-white">Pratap Centenary Portal</h1>
+                  <p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Student Dashboard</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-[10px] font-black text-gray-400 uppercase">{user.name}</span>
+                <button onClick={onLogout} className="text-white font-black text-xs uppercase tracking-widest border-2 border-white/30 px-3 py-1 rounded-xl hover:bg-white hover:text-gray-900 transition-all">Exit</button>
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-7xl mx-auto px-4 py-8 w-full flex-1">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+              {/* LEFT SIDEBAR */}
+              <div className="lg:col-span-3 space-y-2">
+                {navItems.map(n => (
+                  <div key={n.key} onClick={() => setView(n.key)}
+                    className={`p-4 rounded-2xl cursor-pointer transition-all border-b-4 flex items-center gap-3 ${view === n.key ? 'bg-gray-900 text-white border-gray-700 shadow-xl' : 'bg-white text-gray-500 border-gray-100 hover:bg-[#98FB98]/10'}`}>
+                    <span className="text-2xl">{n.icon}</span>
+                    <span className="font-black text-[11px] uppercase tracking-wider">{n.label}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* RIGHT CONTENT */}
+              <div className="lg:col-span-9">
+
+                {/* HOME OVERVIEW */}
+                {view === 'overview' && (
+                  <div className="space-y-6 animate-fade-in-scale">
+                    <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+                      <img src={user.image} className="w-20 h-20 rounded-[20px] border-4 border-[#98FB98] shadow-xl" alt="Student" />
+                      <div>
+                        <h2 className="text-3xl font-black italic tracking-tighter text-gray-900">{user.name}</h2>
+                        <div className="flex gap-3 mt-1 flex-wrap">
+                          <span className="px-3 py-1 bg-gray-900 text-[#bf953f] rounded-lg font-black text-[10px] uppercase">{user.class}</span>
+                          <span className="px-3 py-1 bg-[#98FB98]/30 text-gray-700 rounded-lg font-black text-[10px] uppercase">ID: {user.id}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Attendance Circle + Stats */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="bg-gray-900 p-6 rounded-[30px] text-white flex flex-col items-center shadow-2xl">
+                        <p className="text-[10px] font-black text-[#98FB98] uppercase tracking-widest mb-4">Live Attendance</p>
+                        <div className="relative w-28 h-28">
+                          <svg className="w-full h-full rotate-[-90deg]" viewBox="0 0 36 36">
+                            <circle cx="18" cy="18" r="16" fill="none" stroke="#374151" strokeWidth="4" />
+                            <circle cx="18" cy="18" r="16" fill="none" stroke="#98FB98" strokeWidth="4" strokeDasharray="92, 100" strokeLinecap="round" />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center font-black text-2xl">92%</div>
+                        </div>
+                        <p className="text-gray-400 text-xs mt-3 font-bold uppercase tracking-widest">Term A+ Standing</p>
+                      </div>
+                      <div className="bg-white p-6 rounded-[30px] shadow border border-gray-100 flex flex-col items-center justify-center">
+                        <CircleChart label="Theory" percentage={85} />
+                      </div>
+                      <div className="bg-white p-6 rounded-[30px] shadow border border-gray-100 flex flex-col items-center justify-center">
+                        <CircleChart label="Practical" percentage={98} />
+                      </div>
+                    </div>
+
+                    {/* Daily Schedule */}
+                    <div className="bg-white rounded-[30px] shadow border border-gray-100 overflow-hidden">
+                      <div className="p-5 bg-gray-50 border-b flex justify-between items-center">
+                        <h3 className="font-black text-gray-900 uppercase tracking-widest text-sm">🕒 Today's Class Schedule</h3>
+                        <span className="bg-[#98FB98] text-gray-800 px-3 py-1 rounded-full text-[10px] font-black">6 PERIODS</span>
+                      </div>
+                      <div className="divide-y divide-gray-50">
+                        {schedule.map((s, i) => (
+                          <div key={i} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-all">
+                            <div className="flex items-center gap-3">
+                              <span className="w-7 h-7 bg-[#98FB98]/30 rounded-full flex items-center justify-center font-black text-xs text-gray-700">{i+1}</span>
+                              <div>
+                                <p className="font-black text-gray-800 text-sm">{s.subject}</p>
+                                <p className="text-[10px] text-gray-400 font-bold">{s.teacher}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <span className="text-[10px] bg-gray-100 px-2 py-1 rounded-lg font-bold text-gray-500">{s.room}</span>
+                              <span className="text-[10px] bg-[#98FB98]/20 text-[#5acb5a] px-2 py-1 rounded-lg font-black">{s.time}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ATTENDANCE */}
+                {view === 'attendance' && (
+                  <div className="animate-fade-in-scale space-y-6">
+                    <div className="bg-white p-6 rounded-[30px] shadow border border-gray-100">
+                      <h3 className="font-black text-gray-900 text-xl mb-6 border-l-4 border-[#98FB98] pl-3">📅 Lecture-wise Attendance</h3>
+                      <div className="divide-y divide-gray-50">
+                        {schedule.map((s, i) => (
+                          <div key={i} className="py-4 flex justify-between items-center px-2">
+                            <div className="flex items-center gap-3">
+                              <span className="text-xl">{['✅','✅','❌','✅','✅','✅'][i]}</span>
+                              <div>
+                                <p className="font-black text-gray-800">{s.subject}</p>
+                                <p className="text-[10px] text-gray-400 font-bold">Period {i+1} • {s.time}</p>
+                              </div>
+                            </div>
+                            <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase ${i===2 ? 'bg-red-100 text-red-700' : 'bg-[#98FB98]/30 text-green-800'}`}>
+                              {i===2 ? 'Absent' : 'Present'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-6 p-4 bg-gray-50 rounded-2xl flex justify-between">
+                        <span className="font-black text-gray-700 text-sm">Overall Attendance</span>
+                        <span className="font-black text-[#5acb5a] text-xl">92.5%</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* RESULTS */}
+                {view === 'results' && (
+                  <div className="animate-fade-in-scale space-y-4">
+                    <h3 className="font-black text-gray-900 text-xl border-l-4 border-[#98FB98] pl-3">📊 Exam Results</h3>
+                    {[{sub:'Marathi',marks:82,grade:'A'},{sub:'Hindi',marks:75,grade:'B+'},{sub:'English',marks:88,grade:'A+'},{sub:'Maths',marks:91,grade:'A+'},{sub:'Science',marks:79,grade:'B+'},{sub:'Social Sc.',marks:85,grade:'A'}].map((r,i) => (
+                      <div key={i} className="bg-white p-5 rounded-2xl shadow border border-gray-100 flex justify-between items-center">
+                        <span className="font-black text-gray-800">{r.sub}</span>
+                        <div className="flex items-center gap-4">
+                          <div className="w-32 bg-gray-100 rounded-full h-2 overflow-hidden">
+                            <div className="h-2 rounded-full bg-[#98FB98]" style={{width: r.marks+'%'}}></div>
+                          </div>
+                          <span className="font-black text-gray-700 w-12 text-right">{r.marks}/100</span>
+                          <span className={`px-3 py-1 rounded-xl font-black text-sm ${r.marks>=85?'bg-green-100 text-green-800':'bg-yellow-100 text-yellow-800'}`}>{r.grade}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* PROGRESS */}
+                {view === 'progress' && (
+                  <div className="animate-fade-in-scale space-y-6">
+                    <h3 className="font-black text-gray-900 text-xl border-l-4 border-[#98FB98] pl-3">📈 Academic Progress</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      {[{l:'Theory',p:85},{l:'Practical',p:98},{l:'Attendance',p:92},{l:'Assignments',p:78},{l:'Projects',p:90},{l:'Overall',p:88}].map((c,i) => (
+                        <CircleChart key={i} label={c.l} percentage={c.p} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* TIMETABLE */}
+                {view === 'timetable' && (
+                  <div className="animate-fade-in-scale bg-white p-6 rounded-[30px] shadow border border-gray-100">
+                    <h3 className="font-black text-gray-900 text-xl mb-6 border-l-4 border-[#98FB98] pl-3">🕒 Weekly Timetable</h3>
+                    <div className="space-y-3">
+                      {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map((day,di) => (
+                        <div key={di} className="p-4 bg-gray-50 rounded-2xl">
+                          <p className="font-black text-gray-400 text-xs uppercase tracking-widest mb-3">{day}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {schedule.map((s,i) => (
+                              <div key={i} className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-sm">
+                                <p className="font-black text-gray-800 text-xs">{s.subject}</p>
+                                <p className="text-[9px] text-gray-400 font-bold">{s.time} • {s.room}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* NOTES & SYLLABUS */}
+                {view === 'notes' && (
+                  <div className="animate-fade-in-scale space-y-6">
+                    <h3 className="font-black text-gray-900 text-xl border-l-4 border-[#98FB98] pl-3">📝 Notes & Syllabus</h3>
+                    <div className="flex gap-3 flex-wrap">
+                      {['Marathi','Hindi','English','Maths','Science','Social Sc'].map(s => (
+                        <button key={s} className="px-4 py-2 bg-white border border-gray-200 rounded-xl font-black text-sm hover:bg-[#98FB98] transition-all shadow-sm">{s}</button>
+                      ))}
+                    </div>
+                    {Object.entries(syllabus).map(([sub, chapters]) => (
+                      <div key={sub} className="bg-white p-6 rounded-[25px] shadow border border-gray-100">
+                        <h4 className="font-black text-gray-900 mb-4 border-l-4 border-[#98FB98] pl-3">{sub}</h4>
+                        <div className="space-y-2">
+                          {chapters.map((ch, i) => (
+                            <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-[#98FB98]/10 transition-all cursor-pointer">
+                              <span className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-black text-gray-600">{i+1}</span>
+                              <span className="font-bold text-gray-700 text-sm">{ch}</span>
+                              <span className="ml-auto text-[10px] bg-[#98FB98]/30 text-gray-700 px-2 py-1 rounded-lg font-black">Download 📥</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* TEACHERS - Contact */}
+                {view === 'teachers' && (
+                  <div className="animate-fade-in-scale space-y-6">
+                    <h3 className="font-black text-gray-900 text-xl border-l-4 border-[#98FB98] pl-3">📞 Teacher & Staff Contacts</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {[
+                        {name:'Prof. Patil',role:'Class Teacher',subject:'Marathi & Maths',phone:'919876543210'},
+                        {name:'Prof. Shah',role:'Subject Teacher',subject:'Hindi',phone:'919876543211'},
+                        {name:'Prof. Desai',role:'Subject Teacher',subject:'English',phone:'919876543212'},
+                        {name:'Mr. Kulkarni',role:'Principal',subject:'Main Office',phone:'919876543213'},
+                        {name:'Security Desk',role:'Safety Contact',subject:'Emergency',phone:'919876543214'},
+                        {name:'School Office',role:'Admin Staff',subject:'General Queries',phone:'919876543215'},
+                      ].map((t,i) => (
+                        <div key={i} className="bg-white p-5 rounded-2xl shadow border border-gray-100 flex items-center gap-4">
+                          <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0">
+                            {['👨‍🏫','👩‍🏫','👨‍🏫','👨‍💼','🛡️','🏫'][i]}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-black text-gray-900">{t.name}</p>
+                            <p className="text-xs text-gray-400 font-bold">{t.role} • {t.subject}</p>
+                          </div>
+                          <button onClick={() => window.open(`https://wa.me/${t.phone}?text=Hello Sir/Ma'am, I am ${user.name} (${user.id}). I need help with a query.`, '_blank')}
+                            className="bg-[#25D366] text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-green-600 transition-all shadow">
+                            WhatsApp
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ABOUT ME - Profile + E-ID Card */}
+                {view === 'profile' && (
+                  <div className="animate-fade-in-scale space-y-6">
+                    <div className="bg-white rounded-[40px] overflow-hidden shadow-2xl border border-gray-100 max-w-lg mx-auto">
+                      <div className="h-28 bg-gray-900"></div>
+                      <div className="px-8 pb-10 text-center -mt-14">
+                        <img src={user.image} className="w-28 h-28 rounded-[25px] mx-auto border-8 border-white shadow-xl bg-white" alt="Student" />
+                        <h3 className="mt-4 text-2xl font-black text-gray-900">{user.name}</h3>
+                        <p className="text-[#5acb5a] font-black uppercase text-[10px] tracking-[0.3em] mt-1">Student • Pratap Vidhya Mandir</p>
+                        <div className="mt-6 space-y-3 text-left border-t pt-6">
+                          <div className="flex justify-between"><span className="text-gray-400 text-xs font-black uppercase tracking-widest">Portal ID</span><span className="font-black text-gray-900">{user.id}</span></div>
+                          <div className="flex justify-between"><span className="text-gray-400 text-xs font-black uppercase tracking-widest">Class</span><span className="font-black text-gray-900">{user.class}</span></div>
+                          <div className="flex justify-between"><span className="text-gray-400 text-xs font-black uppercase tracking-widest">Role</span><span className="font-black text-gray-900">Student</span></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* E-ID Card */}
+                    <div className="max-w-lg mx-auto bg-gray-900 rounded-[30px] p-6 text-white shadow-2xl border-4 border-[#bf953f] relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-[#98FB98]/10 rounded-full -mr-10 -mt-10"></div>
+                      <div className="flex items-center gap-2 mb-6">
+                        <img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-8 h-8 bg-black rounded-lg p-0.5" style={{mixBlendMode:'screen'}} alt="Logo" />
+                        <div>
+                          <p className="font-black text-[10px] text-[#bf953f] uppercase tracking-widest">Pratap Vidhya Mandir</p>
+                          <p className="font-black text-[8px] text-gray-500 uppercase tracking-widest">Digital Student ID Card</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-5">
+                        <img src={user.image} className="w-20 h-20 rounded-2xl border-4 border-[#bf953f] bg-white" alt="Student" />
+                        <div>
+                          <h3 className="text-xl font-black italic tracking-tighter">{user.name}</h3>
+                          <p className="text-[#98FB98] font-black text-xs uppercase tracking-widest mt-1">{user.class}</p>
+                          <p className="text-gray-400 font-bold text-xs mt-1">ID: {user.id}</p>
+                          <p className="text-gray-400 font-bold text-xs">Year: 2026-27</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-white/10 flex justify-between">
+                        <span className="text-[8px] text-gray-500 font-black uppercase tracking-widest">Valid Upto: March 2027</span>
+                        <span className="text-[8px] text-[#bf953f] font-black uppercase tracking-widest">CERTIFIED ✓</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </div>
+          </main>
+        </div>
+      );
+    };
+
+
+      const handleRegister = (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        onAddStudent({
+          id: fd.get('studentId').toUpperCase(),
+          password: fd.get('password'),
+          name: fd.get('name'),
+          role: 'student',
+          class: fd.get('standard') + 'th Standard',
+          image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${fd.get('name')}`
+        });
+        alert('Student Added Successfully!');
+        e.target.reset();
+      };
+
+      return (
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+          <ProfileModal isOpen={isProfileOpen} onClose={()=>setIsProfileOpen(false)} data={user} />
+          <header className="bg-white border-b-4 border-gray-900 p-4">
+            <div className="max-w-7xl mx-auto flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-12 h-12 bg-black p-1 rounded-xl" alt="Logo" style={{ mixBlendMode: 'screen' }} />
+                <div>
+                  <h1 className="font-black text-xl tracking-tight italic">Technical Educator Portal</h1>
+                  <p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Faculty Management System</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div onClick={()=>setIsProfileOpen(true)} className="flex items-center gap-3 bg-gray-100 p-1.5 rounded-2xl pr-4 cursor-pointer hover:bg-mint/20 transition-all border border-gray-200">
+                  <img src={user.image} className="w-8 h-8 rounded-xl border-2 border-white shadow-sm" alt="U" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">{user.name.split(' ')[0]} (FAC)</span>
+                </div>
+                <button onClick={onLogout} className="text-red-500 font-black text-xs uppercase tracking-widest">Exit</button>
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-7xl mx-auto px-4 py-8 w-full flex-1">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="lg:col-span-3 space-y-3 font-bold">
+                {['overview', 'attendance', 'registry'].map(v => (
+                  <div key={v} onClick={()=>setView(v)} className={`p-4 rounded-2xl cursor-pointer font-black text-[10px] uppercase tracking-[0.2em] transition-all border-b-4 ${view === v ? 'bg-gray-900 text-white border-gray-700 shadow-xl' : 'bg-white text-gray-400 border-gray-100 hover:bg-gray-50'}`}>
+                    {v === 'overview' ? '🏠 Class Overview' : (v === 'attendance' ? '📅 Daily Attendance' : '👤 Student Registry')}
+                  </div>
+                ))}
+              </div>
+
+              <div className="lg:col-span-9">
+                {view === 'overview' && (
+                  <div className="animate-fade-in-scale space-y-8">
+                    <div className="bg-gray-900 p-10 rounded-[50px] text-white shadow-2xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-mint/10 -mr-20 -mt-20 rounded-full blur-3xl"></div>
+                      <h2 className="text-4xl font-black italic tracking-tighter mb-4">Good Morning, {user.name.split(' ')[1]}!</h2>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8">
+                         <div className="bg-white/10 p-4 rounded-3xl border border-white/10"><p className="text-[10px] text-mint uppercase font-black">Today's Lectures</p><p className="text-2xl font-black">6 Periods</p></div>
+                         <div className="bg-white/10 p-4 rounded-3xl border border-white/10"><p className="text-[10px] text-mint uppercase font-black">Total Students</p><p className="text-2xl font-black">60 Head</p></div>
+                         <div className="bg-white/10 p-4 rounded-3xl border border-white/10"><p className="text-[10px] text-mint uppercase font-black">Class Room</p><p className="text-2xl font-black">G-12</p></div>
+                         <div className="bg-white/10 p-4 rounded-3xl border border-white/10"><p className="text-[10px] text-mint uppercase font-black">Academic Year</p><p className="text-2xl font-black">2026-27</p></div>
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-[40px] shadow-sm border border-gray-100">
+                       <h3 className="text-sm font-black text-gray-900 border-l-4 border-mint pl-3 mb-6 uppercase tracking-widest italic">Teaching Schedule</h3>
+                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-x divide-gray-50">
+                          {['Marathi', 'Hindi', 'English', 'Maths', 'Science', 'Social'].map((s, i) => (
+                            <div key={i} className="p-4 text-center hover:bg-mint/10 transition-all rounded-2xl">
+                               <p className="text-[8px] font-black text-mint-dark mb-1">{7 + i}:00 AM</p>
+                               <p className="text-sm font-black text-gray-900">{s}</p>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {view === 'registry' && (
+                  <div className="animate-fade-in-scale max-w-xl mx-auto">
+                    <div className="bg-white p-10 rounded-[40px] shadow-2xl border border-gray-100">
+                      <h3 className="text-2xl font-black text-gray-900 mb-8 border-l-8 border-gray-900 pl-4 tracking-tighter">New Enrollment</h3>
+                      <form onSubmit={handleRegister} className="space-y-6">
+                        <input name="name" type="text" placeholder="Full Name" className="w-full p-4 bg-gray-50 rounded-2xl font-bold focus:outline-mint" required />
+                        <div className="flex gap-4">
+                           <input name="standard" type="number" placeholder="Std (eg 10)" className="w-1/2 p-4 bg-gray-50 rounded-2xl font-bold focus:outline-mint" required />
+                           <input name="studentId" type="text" placeholder="Portal ID" className="w-1/2 p-4 bg-gray-50 rounded-2xl font-bold focus:outline-mint" required />
+                        </div>
+                        <div className="flex gap-4">
+                           <input name="parentPhone" type="tel" placeholder="Parent WhatsApp No" className="w-1/2 p-4 bg-gray-50 rounded-2xl font-bold focus:outline-mint" required />
+                           <input name="password" type="password" placeholder="Passcode" className="w-1/2 p-4 bg-gray-50 rounded-2xl font-bold focus:outline-mint" required />
+                        </div>
+                        <button className="w-full bg-gray-900 text-white py-5 rounded-3xl font-black tracking-widest uppercase hover:bg-black transition-all shadow-xl">Add to Master DB →</button>
+                      </form>
+                    </div>
+                  </div>
+                )}
+
+                {view === 'attendance' && (
+                  <div className="animate-fade-in-scale bg-white p-8 rounded-[40px] shadow-sm border border-gray-100">
+                     <div className="flex justify-between items-center mb-10">
+                        <h3 className="text-xl font-black text-gray-900 tracking-tighter italic">Live Attendance (G-12)</h3>
+                        <div className="flex gap-3">
+                           <button onClick={() => {
+                             if(confirm('Release Results to all parents via WhatsApp?')) {
+                               alert('SYSTEM: Broadcasting result links to all registered WhatsApp numbers...');
+                             }
+                           }} className="bg-emerald-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg">Release Results 📢</button>
+                           <div className="text-[10px] font-black bg-mint/20 text-mint-dark px-4 py-2 rounded-xl">DATE: 14 Oct, 2026</div>
+                        </div>
+                     </div>
+                     <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6 h-[400px] overflow-y-auto pr-4 custom-scrollbar font-bold">
+                        {Array.from({length: 60}).map((_, i) => (
+                          <div key={i} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center group transition-all">
+                             <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center font-bold text-xs text-mint-dark border mb-2 group-hover:scale-110 transition-transform">{i+1}</div>
+                             <p className="text-[10px] font-black text-gray-400 mb-4 text-center">STUDENT {i+1}</p>
+                             <div className="flex gap-2 w-full">
+                                <button className="flex-1 py-1.5 bg-mint/40 text-emerald-900 rounded-lg text-[10px] font-black hover:bg-mint transition-colors">P</button>
+                                <button onClick={() => {
+                                  const msg = `ALERT: Your ward (Student ${i+1}) is ABSENT today at Pratap Vidhya Mandir. Please contact the class teacher.`;
+                                  window.open(`https://wa.me/919999999999?text=${encodeURIComponent(msg)}`, '_blank');
+                                }} className="flex-1 py-1.5 bg-red-100 text-red-800 rounded-lg text-[10px] font-black hover:bg-red-500 hover:text-white transition-all shadow-sm">A 🚨</button>
+                             </div>
+                          </div>
+                        ))}
+                     </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </main>
+        </div>
+      );
+    };
+
+    const StudentDashboard = ({ onLogout, user }) => {
+      const [parentMode, setParentMode] = useState(false);
+      const [subview, setSubview] = useState('overview');
+
+      return (
+        <div className={`min-h-screen transition-all duration-700 ${parentMode ? 'bg-emerald-50' : 'bg-[#f4fdf4]'}`}>
+          <header className={`p-4 border-b-4 transition-all duration-500 shadow-xl ${parentMode ? 'bg-white border-emerald-500' : 'bg-gray-900 border-mint'}`}>
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="flex items-center gap-4 text-center md:text-left">
+                 <div className="bg-black p-2 rounded-2xl border-2 border-[#bf953f]">
+                    <img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-10 h-10 object-contain" alt="Logo" style={{ mixBlendMode: 'screen' }} />
+                 </div>
+                 <div>
+                    <h1 className={`font-black text-xl italic tracking-tight ${parentMode ? 'text-gray-900' : 'text-white'}`}>
+                       {parentMode ? 'प्रताप पोर्टल (पालक मोड)' : 'Pratap Centenary Portal'}
+                    </h1>
+                    <p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Village Educational Infrastructure</p>
+                 </div>
+              </div>
+              
+              <div className="flex items-center gap-6">
+                 <div className="flex items-center gap-3 bg-white p-2 rounded-2xl shadow-sm border border-gray-100">
+                    <div className="flex flex-col items-end pr-3 border-r border-dashed border-gray-200 text-[8px] font-black uppercase">
+                       <span className="text-gray-400">Rural Visibility</span>
+                       <span className="text-mint-dark">Parent Friendly</span>
+                    </div>
+                    <button onClick={()=>setParentMode(!parentMode)} className={`w-12 h-6 rounded-full relative transition-all duration-500 ${parentMode ? 'bg-mint' : 'bg-gray-200'}`}>
+                       <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-500 ${parentMode ? 'left-6.5' : 'left-0.5'}`}></div>
+                    </button>
+                 </div>
+                 <button onClick={onLogout} className={`font-black text-[10px] uppercase tracking-widest ${parentMode ? 'text-gray-900' : 'text-white'}`}>Exit</button>
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-7xl mx-auto px-4 py-8">
+             <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-8 mb-10">
+                <div className={`p-1 rounded-[30px] border-4 transition-all duration-500 ${parentMode ? 'bg-emerald-100 border-white' : 'bg-white border-mint shadow-2xl sm:rotate-[-3deg]'}`}>
+                   <img src={user.image} className="w-24 h-24 rounded-[25px] object-cover" alt="Student" />
+                </div>
+                <div>
+                   <h2 className={`text-4xl font-black italic tracking-tighter uppercase transition-all ${parentMode ? 'text-emerald-900' : 'text-gray-900'}`}>{user.name}</h2>
+                   <div className="flex gap-4 items-center mt-2 font-black text-[10px] uppercase tracking-widest">
+                      <span className="px-3 py-1 bg-gray-900 text-[#bf953f] rounded-lg">{user.class}</span>
+                      <span className="text-gray-400">ID: {user.id}</span>
+                   </div>
+                </div>
+             </div>
+
+             {parentMode ? (
+               <div className="space-y-10 animate-fade-in-scale">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <div className="bg-white p-10 rounded-[50px] shadow-2xl border-4 border-emerald-500 flex flex-col items-center text-center">
+                        <span className="text-6xl mb-6">📊</span>
+                        <h3 className="text-3xl font-black text-gray-900 mb-2 italic tracking-tighter">निकाल (RESULTS)</h3>
+                        <p className="text-gray-500 font-bold">मागील परीक्षेचे गुण पहा <br/><span className="text-xs uppercase opacity-60 font-black">(Check Academic Standing)</span></p>
+                        <div className="mt-8 px-10 py-4 bg-emerald-500 text-white rounded-3xl font-black tracking-widest uppercase shadow-lg">VIEW | पाहा</div>
+                     </div>
+                     <div className="bg-white p-10 rounded-[50px] shadow-2xl border-4 border-gray-900 flex flex-col items-center text-center">
+                        <span className="text-6xl mb-6">📞</span>
+                        <h3 className="text-3xl font-black text-gray-900 mb-2 italic tracking-tighter">संपर्क (CONTACT)</h3>
+                        <p className="text-gray-500 font-bold">वर्गशिक्षकांना फोन करा <br/><span className="text-xs uppercase opacity-60 font-black">(Call Class Teacher)</span></p>
+                        <div className="mt-8 px-10 py-4 bg-gray-900 text-white rounded-3xl font-black tracking-widest uppercase shadow-lg">CALL | फोन करा</div>
+                     </div>
+                  </div>
+
+                  <div className="bg-[#fff9e6] p-12 rounded-[60px] border-4 border-[#ffd60a] shadow-xl relative overflow-hidden">
+                     <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400 rotate-45 -mr-16 -mt-16"></div>
+                     <h3 className="text-3xl font-black text-yellow-900 italic tracking-tighter mb-6">शाळेचे नोटिस (IMPORTANT MESSAGE)</h3>
+                     <div className="p-8 bg-white/80 backdrop-blur rounded-[35px] border-2 border-yellow-200">
+                        <div className="text-emerald-700 font-black text-2xl flex items-center gap-4">
+                           <span>📢</span> "उद्या मुलांच्या सहलीसाठी मीटिंग आहे. (Trip Meeting tomorrow)."
+                        </div>
+                     </div>
+                  </div>
+               </div>
+             ) : (
+               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in-scale">
+                  <div className="lg:col-span-4 space-y-6">
+                     <div className="bg-gray-900 p-8 rounded-[40px] text-white shadow-2xl border-b-8 border-mint overflow-hidden relative">
+                        <p className="text-[10px] font-black text-mint uppercase tracking-[0.3em] mb-2">Live Attendance</p>
+                        <h4 className="text-6xl font-black italic tracking-tighter">92.5%</h4>
+                        <p className="text-gray-400 text-xs mt-4 font-bold uppercase tracking-widest">Term Performance: A+</p>
+                     </div>
+                     <div className="grid grid-cols-2 gap-4">
+                        <CircleChart label="Theory" percentage={85} />
+                        <CircleChart label="Practical" percentage={98} />
+                     </div>
+                  </div>
+                  <div className="lg:col-span-8">
+                     <div className="bg-white rounded-[40px] shadow-sm border border-gray-100 overflow-hidden font-bold">
+                        <div className="p-6 bg-gray-50 flex justify-between items-center text-sm font-black uppercase">
+                           <h3 className="tracking-tighter italic">Class Schedule</h3>
+                           <span className="bg-mint text-emerald-900 px-3 py-1 rounded-full text-[8px]">6 SLOTS</span>
+                        </div>
+                        <div className="divide-y divide-gray-50">
+                           {['Marathi', 'Hindi', 'English', 'Maths (Adv)', 'Science (Lab)', 'Social Sc'].map((s, i) => (
+                              <div key={i} className="p-6 flex justify-between items-center hover:bg-gray-50 transition-all">
+                                 <span className="text-gray-800 tracking-tight">{s}</span>
+                                 <span className="text-[10px] text-gray-400 p-2 bg-gray-100 rounded-xl font-mono">{7 + i}:00 AM</span>
+                              </div>
+                           ))}
+                        </div>
+                     </div>
+                  </div>
+               </div>
+             )}
+          </main>
+        </div>
+      );
+    };
+
+      const AdminDashboard = ({ onLogout, user, onAddUser, onToggleBlock, onLoginAs }) => {
+        const [view, setView] = useState('overview');
+        const [allUsers, setAllUsers] = useState([]);
+
+        const handleTeacherRegister = (e) => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          onAddUser({
+            id: fd.get('teacherId').toUpperCase(),
+            password: fd.get('password'),
+            name: fd.get('name'),
+            role: 'faculty',
+            class: fd.get('class') || 'General',
+            image: `https://api.dicebear.com/7.x/avataaars/svg?seed=${fd.get('name')}`
+          });
+          alert('Teacher Added Successfully!');
+          e.target.reset();
+          setView('users');
+        };
+
+        useEffect(() => {
+        setAllUsers(JSON.parse(localStorage.getItem('pvm_users') || '[]'));
+      }, [view]);
+
+      const stats = {
+        students: allUsers.filter(u => u.role === 'student').length,
+        teachers: allUsers.filter(u => u.role === 'faculty').length,
+        staff: allUsers.filter(u => u.role === 'staff').length
+      };
+
+      return (
+        <div className="min-h-screen bg-gray-100 flex flex-col">
+          <header className="bg-white border-b-4 border-gray-900 py-4 px-6 shadow-xl">
+             <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-4 text-center md:text-left">
+                   <div className="bg-gray-900 p-2 rounded-2xl border-2 border-[#bf953f]">
+                      <img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-10 h-10 object-contain" alt="" style={{ mixBlendMode: 'screen' }} />
+                   </div>
+                   <div>
+                      <h1 className="font-black text-2xl italic tracking-tighter">Technology Governance Hub</h1>
+                      <p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Master Infrastructure System</p>
+                   </div>
+                </div>
+                <div className="flex items-center gap-4">
+                   <div className="bg-gray-900 text-white px-4 py-2 rounded-2xl font-black text-[10px] tracking-widest border-2 border-[#bf953f]">ROOT ACCESS</div>
+                   <button onClick={onLogout} className="text-red-500 font-black text-xs uppercase tracking-widest border-2 border-red-500 px-4 py-2 rounded-2xl hover:bg-red-500 hover:text-white transition-all">Emergency Exit</button>
+                </div>
+             </div>
+          </header>
+
+          <main className="max-w-7xl mx-auto px-4 py-8 w-full flex-1">
+             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-3 space-y-3 font-bold text-sm uppercase">
+                   {['overview', 'users', 'registry'].map(v => (
+                      <div key={v} onClick={()=>setView(v)} className={`p-4 rounded-3xl cursor-pointer font-black text-[10px] tracking-[0.2em] transition-all border-b-4 ${view === v ? 'bg-gray-900 text-white border-gray-700 shadow-2xl scale-105' : 'bg-white text-gray-400 border-gray-100 hover:bg-gray-50'}`}>
+                         {v === 'overview' ? '📊 System Metrics' : (v === 'users' ? '👥 User Governance' : '📝 Teacher Registry')}
+                      </div>
+                   ))}
+                </div>
+
+                <div className="lg:col-span-9 font-bold">
+                   {view === 'overview' && (
+                      <div className="animate-fade-in-scale space-y-8">
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-white p-8 rounded-[40px] shadow-sm border-b-8 border-blue-500"><p className="text-[10px] font-black text-gray-400 uppercase">Total Students</p><p className="text-5xl font-black text-gray-900 mt-2">{stats.students}</p></div>
+                            <div className="bg-white p-8 rounded-[40px] shadow-sm border-b-8 border-emerald-500"><p className="text-[10px] font-black text-gray-400 uppercase">Faculty Headcount</p><p className="text-5xl font-black text-gray-900 mt-2">{stats.teachers}</p></div>
+                            <div className="bg-white p-8 rounded-[40px] shadow-sm border-b-8 border-orange-500"><p className="text-[10px] font-black text-gray-400 uppercase">System Staff</p><p className="text-5xl font-black text-gray-900 mt-2">{stats.staff}</p></div>
+                         </div>
+                         <div className="bg-gray-900 rounded-[50px] p-12 text-white shadow-2xl relative overflow-hidden">
+                            <h3 className="text-2xl font-black italic tracking-tighter mb-8 text-mint">Infrastructure Diagnostics</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
+                               <div><p className="text-[10px] font-black text-gray-400 uppercase">Server Load</p><p className="text-xl font-bold">STABLE</p></div>
+                               <div><p className="text-[10px] font-black text-gray-400 uppercase">DB Sync</p><p className="text-xl font-bold">HEALTHY</p></div>
+                               <div><p className="text-[10px] font-black text-gray-400 uppercase">Uptime</p><p className="text-xl font-bold">99.9%</p></div>
+                               <div><p className="text-[10px] font-black text-gray-400 uppercase">Gateway</p><p className="text-xl font-bold">ACTIVE</p></div>
+                            </div>
+                         </div>
+                      </div>
+                   )}
+
+                    {view === 'users' && (
+                      <div className="animate-fade-in-scale bg-white rounded-[40px] shadow-2xl border border-gray-100 overflow-hidden">
+                         <div className="overflow-x-auto custom-scrollbar">
+                           <table className="w-full text-left min-w-[600px]">
+                              <thead className="bg-gray-900 text-white text-[10px] sm:text-xs font-black uppercase tracking-widest italic">
+                                 <tr><th className="p-4 sm:p-6">User Identity</th><th className="p-4 sm:p-6">Role</th><th className="p-4 sm:p-6">Governance</th></tr>
+                              </thead>
+                              <tbody className="divide-y text-xs sm:text-sm font-bold">
+                                 {allUsers.map((u, i) => (
+                                    <tr key={i} className={`hover:bg-gray-50 transition-all ${u.blocked ? 'opacity-50 grayscale' : ''}`}>
+                                       <td className="p-4 sm:p-6 flex items-center gap-3"><img src={u.image} className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl" /> {u.name}</td>
+                                       <td className="p-4 sm:p-6 uppercase text-[8px] sm:text-[10px] font-black text-gray-400">{u.role}</td>
+                                       <td className="p-4 sm:p-6 flex gap-2 flex-wrap">
+                                          <button onClick={()=>onLoginAs(u)} className="px-3 sm:px-4 py-2 bg-mint rounded-xl text-[8px] font-black uppercase">Switch</button>
+                                          <button onClick={()=>{onToggleBlock(u.id); setAllUsers(JSON.parse(localStorage.getItem('pvm_users')))}} className={`px-3 sm:px-4 py-2 rounded-xl text-[8px] font-black uppercase text-white ${u.blocked ? 'bg-emerald-500' : 'bg-red-500'}`}>{u.blocked ? 'Restore' : 'Suspend'}</button>
+                                       </td>
+                                    </tr>
+                                 ))}
+                              </tbody>
+                           </table>
+                         </div>
+                      </div>
+                   )}
+
+                   {view === 'registry' && (
+                      <div className="animate-fade-in-scale max-w-xl mx-auto">
+                        <div className="bg-white p-10 rounded-[40px] shadow-2xl border border-gray-100">
+                          <h3 className="text-2xl font-black text-gray-900 mb-8 border-l-8 border-gray-900 pl-4 tracking-tighter">Teacher Registry</h3>
+                          <form onSubmit={handleTeacherRegister} className="space-y-6">
+                            <input name="name" type="text" placeholder="Full Name" className="w-full p-4 bg-gray-50 rounded-2xl font-bold focus:outline-mint" required />
+                            <div className="flex gap-4">
+                               <input name="class" type="text" placeholder="Class (e.g. 10-A)" className="w-1/2 p-4 bg-gray-50 rounded-2xl font-bold focus:outline-mint" required />
+                               <input name="teacherId" type="text" placeholder="Portal ID (e.g. FAC02)" className="w-1/2 p-4 bg-gray-50 rounded-2xl font-bold focus:outline-mint" required />
+                            </div>
+                            <input name="password" type="password" placeholder="Passcode" className="w-full p-4 bg-gray-50 rounded-2xl font-bold focus:outline-mint" required />
+                            <button className="w-full bg-gray-900 text-white py-5 rounded-3xl font-black tracking-widest uppercase hover:bg-black transition-all shadow-xl">Approve & Add Teacher →</button>
+                          </form>
+                        </div>
+                      </div>
+                   )}
+                </div>
+             </div>
+          </main>
+        </div>
+      );
+    };
+
+    const App = () => {
+      const [showSplash, setShowSplash] = useState(true);
+      const [currentUser, setCurrentUser] = useState(null);
+
+      useEffect(() => {
+        // UNCONDITIONAL MASTER RESET
+        const bulk = [
+          { id: 'ADMIN01', password: 'admin123', name: 'Tech Potdar', role: 'admin', image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin', blocked: false },
+          { id: 'FAC01', password: '123', name: 'Prof. Patil', role: 'faculty', image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Teacher1', class: '10-A', blocked: false },
+          { id: 'STU01', password: '123', name: 'Rahul Shinde', role: 'student', image: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Student1', class: '10th Standard', blocked: false }
+        ];
+        localStorage.setItem('pvm_users', JSON.stringify(bulk));
+      }, []);
+
+      const handleAdd = (nu) => {
+        const users = JSON.parse(localStorage.getItem('pvm_users') || '[]');
+        users.push({...nu, blocked: false});
+        localStorage.setItem('pvm_users', JSON.stringify(users));
+      };
+
+      const handleToggle = (id) => {
+        const users = JSON.parse(localStorage.getItem('pvm_users') || '[]');
+        const updated = users.map(u => u.id === id ? {...u, blocked: !u.blocked} : u);
+        localStorage.setItem('pvm_users', JSON.stringify(updated));
+      };
+
+      if (showSplash) return <SplashScreen onComplete={() => setShowSplash(false)} />;
+      if (!currentUser) return <Login onLoginSuccess={setCurrentUser} />;
+      
+      if (currentUser.role === 'admin') return <AdminDashboard user={currentUser} onLogout={()=>setCurrentUser(null)} onAddUser={handleAdd} onToggleBlock={handleToggle} onLoginAs={setCurrentUser} />;
+      if (currentUser.role === 'faculty') return <TeacherDashboard user={currentUser} onLogout={()=>setCurrentUser(null)} onAddStudent={handleAdd} />;
+      if (currentUser.role === 'student') return <StudentDashboard user={currentUser} onLogout={()=>setCurrentUser(null)} />;
+
+      return <div className="text-center p-20 font-black">UNAUTHORIZED ACCESS</div>;
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
