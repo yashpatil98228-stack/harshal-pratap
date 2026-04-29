@@ -121,25 +121,15 @@
       const [notifyMsg, setNotifyMsg] = useState('');
       const [notifySelected, setNotifySelected] = useState({});
       const absentList = Object.entries(attStatus).filter(([,v])=>v==='A').map(([k])=>Number(k));
-
       const handleSubmitAttendance = () => {
-        if(absentList.length > 0) {
-          setShowNotifyModal(true);
-          setNotifyMsg(`\u{1F6A8} ALERT: Your child was marked ABSENT today (${new Date().toLocaleDateString()}) at Pratap Vidhya Mandir. Please contact the school if needed.`);
-          const sel = {}; absentList.forEach(i=>sel[i]=true); setNotifySelected(sel);
-        } else {
-          alert('\u2705 Attendance submitted! All students present today.');
-        }
+        if(absentList.length > 0) { setShowNotifyModal(true); setNotifyMsg(`🚨 ALERT: Your child was marked ABSENT today (${new Date().toLocaleDateString()}) at Pratap Vidhya Mandir.`); const sel = {}; absentList.forEach(i=>sel[i]=true); setNotifySelected(sel); }
+        else { alert('✅ Attendance submitted! All present.'); }
       };
-
       const handleSendNotifications = () => {
         const selected = Object.entries(notifySelected).filter(([,v])=>v).map(([k])=>Number(k));
-        if(selected.length===0){alert('Please select at least one student.');return;}
-        selected.forEach(i=>{
-          window.open(`https://wa.me/?text=${encodeURIComponent(notifyMsg.replace('Your child',`Student ${i+1}`))}`, '_blank');
-        });
-        setShowNotifyModal(false);
-        alert(`\u2705 Attendance submitted! Notifications sent to ${selected.length} parent(s).`);
+        if(!selected.length){alert('Select at least one student.');return;}
+        selected.forEach(i=>{window.open(`https://wa.me/?text=${encodeURIComponent(notifyMsg.replace('Your child',`Student ${i+1}`))}`, '_blank');});
+        setShowNotifyModal(false); alert(`✅ Notifications sent to ${selected.length} parent(s).`);
       };
 
       const [uploadClass, setUploadClass] = useState('10');
@@ -193,7 +183,7 @@
         <div className="min-h-screen bg-gray-50 flex flex-col">
           <header className="bg-white border-b-4 border-gray-900 p-4">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
-              <div className="flex items-center gap-4"><button onClick={()=>setMobileMenu(!mobileMenu)} className="lg:hidden w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-xl font-black">⋮</button><img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-12 h-12 bg-black p-1 rounded-xl" alt="L" /><div><h1 className="font-black text-xl italic tracking-tight">Faculty Portal</h1><p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Pratap Vidhya Mandir</p></div></div>
+              <div className="flex items-center gap-4"><button onClick={()=>setMobileMenu(!mobileMenu)} className="lg:hidden w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center font-black text-lg">☰</button><img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-12 h-12 bg-black p-1 rounded-xl" alt="L" /><div><h1 className="font-black text-xl italic tracking-tight">Faculty Portal</h1><p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Pratap Vidhya Mandir</p></div></div>
               <div className="flex items-center gap-3">
                 <select value={lang} onChange={e=>setLang(e.target.value)} className="text-[10px] font-black bg-gray-100 px-2 py-1 rounded-lg outline-none cursor-pointer">
                   <option value="en">🇬🇧 EN</option><option value="mr">🇮🇳 मराठी</option><option value="hi">🇮🇳 हिंदी</option>
@@ -233,11 +223,8 @@
                 {view==='attendance' && (
                   <div className="animate-fade-in-scale bg-white p-8 rounded-[30px] shadow border border-gray-100">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b gap-4">
-                      <div><h3 className="text-xl font-black italic">📅 Attendance — 60 Students</h3><p className="text-xs text-gray-400 font-bold uppercase">Tap P (Present) or A (Absent) for each student</p></div>
-                      <div className="flex gap-3 items-center">
-                        <span className="text-xs font-black text-gray-400">Absent: <span className="text-red-500">{absentList.length}</span> / 60</span>
-                        <button onClick={handleSubmitAttendance} className="bg-gray-900 text-white px-5 py-3 rounded-xl text-xs font-black uppercase shadow-lg hover:bg-black transition-all">Submit ✅</button>
-                      </div>
+                      <div><h3 className="text-xl font-black italic">📅 Attendance — 60 Students</h3><p className="text-xs text-gray-400 font-bold uppercase">Tap P or A for each student</p></div>
+                      <div className="flex gap-3 items-center"><span className="text-xs font-black text-gray-400">Absent: <span className="text-red-500">{absentList.length}</span>/60</span><button onClick={handleSubmitAttendance} className="bg-gray-900 text-white px-5 py-3 rounded-xl text-xs font-black uppercase shadow-lg">Submit ✅</button></div>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4 max-h-[500px] overflow-y-auto pr-2">
                       {Array.from({length:60}).map((_,i)=>(
@@ -245,49 +232,25 @@
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs mb-2 ${attStatus[i]==='A'?'bg-red-500 text-white':'bg-white border-2 border-mint'}`}>{i+1}</div>
                           <p className="text-[9px] font-black text-gray-400 mb-3 uppercase">Stu {i+1}</p>
                           <div className="flex gap-1 w-full">
-                            <button onClick={()=>setAttStatus(p=>({...p,[i]:'P'}))} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${attStatus[i]==='P'?'bg-green-500 text-white shadow':'bg-gray-100 text-gray-400 hover:bg-green-100'}`}>P</button>
-                            <button onClick={()=>setAttStatus(p=>({...p,[i]:'A'}))} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${attStatus[i]==='A'?'bg-red-500 text-white shadow':'bg-gray-100 text-gray-400 hover:bg-red-100'}`}>A</button>
+                            <button onClick={()=>setAttStatus(p=>({...p,[i]:'P'}))} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${attStatus[i]==='P'?'bg-green-500 text-white shadow':'bg-gray-100 text-gray-400'}`}>P</button>
+                            <button onClick={()=>setAttStatus(p=>({...p,[i]:'A'}))} className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${attStatus[i]==='A'?'bg-red-500 text-white shadow':'bg-gray-100 text-gray-400'}`}>A</button>
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
-
-                {/* NOTIFICATION MODAL */}
                 {showNotifyModal && (
                   <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={()=>setShowNotifyModal(false)}>
                     <div className="bg-white rounded-[30px] shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-8" onClick={e=>e.stopPropagation()}>
-                      <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-xl font-black italic">📢 Send Absence Notification?</h3>
-                        <button onClick={()=>setShowNotifyModal(false)} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center font-black text-gray-400 hover:bg-red-100 hover:text-red-500">×</button>
-                      </div>
-                      <p className="text-sm text-gray-500 font-bold mb-4">{absentList.length} student(s) marked absent. Select who to notify:</p>
-
+                      <div className="flex justify-between items-center mb-6"><h3 className="text-xl font-black italic">📢 Send Notification?</h3><button onClick={()=>setShowNotifyModal(false)} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center font-black text-gray-400 hover:bg-red-100 hover:text-red-500">×</button></div>
+                      <p className="text-sm text-gray-500 font-bold mb-4">{absentList.length} student(s) absent. Select who to notify:</p>
                       <div className="space-y-2 mb-6 max-h-[200px] overflow-y-auto">
-                        <div className="flex gap-2 mb-2">
-                          <button onClick={()=>{const s={};absentList.forEach(i=>s[i]=true);setNotifySelected(s)}} className="text-[10px] font-black bg-gray-900 text-white px-3 py-1.5 rounded-lg uppercase">Select All</button>
-                          <button onClick={()=>setNotifySelected({})} className="text-[10px] font-black bg-gray-100 text-gray-500 px-3 py-1.5 rounded-lg uppercase">Deselect All</button>
-                        </div>
-                        {absentList.map(i=>(
-                          <label key={i} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${notifySelected[i]?'bg-red-50 border border-red-200':'bg-gray-50 border border-gray-100'}`}>
-                            <input type="checkbox" checked={!!notifySelected[i]} onChange={e=>setNotifySelected(p=>({...p,[i]:e.target.checked}))} className="w-4 h-4 accent-red-500" />
-                            <div className="w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center font-black text-xs">{i+1}</div>
-                            <span className="font-black text-sm">Student {i+1}</span>
-                            <span className="ml-auto text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded-lg font-black">ABSENT</span>
-                          </label>
-                        ))}
+                        <div className="flex gap-2 mb-2"><button onClick={()=>{const s={};absentList.forEach(i=>s[i]=true);setNotifySelected(s)}} className="text-[10px] font-black bg-gray-900 text-white px-3 py-1.5 rounded-lg uppercase">Select All</button><button onClick={()=>setNotifySelected({})} className="text-[10px] font-black bg-gray-100 text-gray-500 px-3 py-1.5 rounded-lg uppercase">Deselect All</button></div>
+                        {absentList.map(i=>(<label key={i} className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer ${notifySelected[i]?'bg-red-50 border border-red-200':'bg-gray-50 border border-gray-100'}`}><input type="checkbox" checked={!!notifySelected[i]} onChange={e=>setNotifySelected(p=>({...p,[i]:e.target.checked}))} className="w-4 h-4 accent-red-500" /><div className="w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center font-black text-xs">{i+1}</div><span className="font-black text-sm">Student {i+1}</span><span className="ml-auto text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded-lg font-black">ABSENT</span></label>))}
                       </div>
-
-                      <div className="mb-6">
-                        <label className="text-[10px] font-black text-gray-400 uppercase block mb-2">Custom Message</label>
-                        <textarea value={notifyMsg} onChange={e=>setNotifyMsg(e.target.value)} rows="3" className="w-full p-4 bg-gray-50 rounded-2xl font-bold outline-none resize-none text-sm focus:ring-2 focus:ring-red-200"></textarea>
-                      </div>
-
-                      <div className="flex gap-3">
-                        <button onClick={()=>{setShowNotifyModal(false);alert('\u2705 Attendance submitted without notifications.')}} className="flex-1 py-4 bg-gray-100 rounded-2xl font-black text-sm uppercase text-gray-500 hover:bg-gray-200 transition-all">Skip & Submit</button>
-                        <button onClick={handleSendNotifications} className="flex-1 py-4 bg-[#25D366] text-white rounded-2xl font-black text-sm uppercase shadow-lg hover:bg-green-600 transition-all flex items-center justify-center gap-2">📩 Send via WhatsApp</button>
-                      </div>
+                      <div className="mb-6"><label className="text-[10px] font-black text-gray-400 uppercase block mb-2">Custom Message</label><textarea value={notifyMsg} onChange={e=>setNotifyMsg(e.target.value)} rows="3" className="w-full p-4 bg-gray-50 rounded-2xl font-bold outline-none resize-none text-sm"></textarea></div>
+                      <div className="flex gap-3"><button onClick={()=>{setShowNotifyModal(false);alert('✅ Submitted without notifications.')}} className="flex-1 py-4 bg-gray-100 rounded-2xl font-black text-sm uppercase text-gray-500">Skip</button><button onClick={handleSendNotifications} className="flex-1 py-4 bg-[#25D366] text-white rounded-2xl font-black text-sm uppercase shadow-lg flex items-center justify-center gap-2">📩 WhatsApp</button></div>
                     </div>
                   </div>
                 )}
@@ -435,9 +398,9 @@
     /* ========== STUDENT DASHBOARD ========== */
     const StudentDashboard = ({ onLogout, user }) => {
       const [view, setView] = useState('overview');
+      const [mobileMenu, setMobileMenu] = useState(false);
       const [attSub, setAttSub] = useState(null);
       const [resTab, setResTab] = useState('ut1');
-      const [mobileMenu, setMobileMenu] = useState(false);
       const [lang, setLang] = useState('en');
       const sLabels = {
         en:['Home','Attendance','Results','Exams','Progress','Timetable','Notes & Syllabus','Teachers','About Me'],
@@ -456,7 +419,7 @@
         <div className="min-h-screen bg-[#f4fdf4] flex flex-col">
           <header className="bg-gray-900 border-b-4 border-mint p-4">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
-              <div className="flex items-center gap-4"><button onClick={()=>setMobileMenu(!mobileMenu)} className="lg:hidden w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-xl text-white font-black">⋮</button><div className="bg-black p-2 rounded-2xl border-2 border-[#bf953f]"><img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-10 h-10 object-contain" alt="L" style={{mixBlendMode:'screen'}} /></div><div><h1 className="font-black text-xl italic text-white">Pratap Portal</h1><p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Student Dashboard</p></div></div>
+              <div className="flex items-center gap-4"><button onClick={()=>setMobileMenu(!mobileMenu)} className="lg:hidden w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-white font-black text-lg">☰</button><div className="bg-black p-2 rounded-2xl border-2 border-[#bf953f]"><img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-10 h-10 object-contain" alt="L" style={{mixBlendMode:'screen'}} /></div><div><h1 className="font-black text-xl italic text-white">Pratap Portal</h1><p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Student Dashboard</p></div></div>
               <div className="flex items-center gap-3">
                 <select value={lang} onChange={e=>setLang(e.target.value)} className="text-[10px] font-black bg-white/10 text-white px-2 py-1 rounded-lg outline-none cursor-pointer">
                   <option value="en">🇬🇧 EN</option><option value="mr">🇮🇳 मराठी</option><option value="hi">🇮🇳 हिंदी</option>
@@ -818,7 +781,7 @@
         <div className="min-h-screen bg-gray-100 flex flex-col">
           <header className="bg-white border-b-4 border-gray-900 py-4 px-6 shadow-xl">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="flex items-center gap-4"><button onClick={()=>setMobileMenu(!mobileMenu)} className="lg:hidden w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-xl font-black">⋮</button><div className="bg-gray-900 p-2 rounded-2xl border-2 border-[#bf953f]"><img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-10 h-10 object-contain" alt="" style={{mixBlendMode:'screen'}} /></div><div><h1 className="font-black text-2xl italic tracking-tighter">Admin Hub</h1><p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Master System</p></div></div>
+              <div className="flex items-center gap-4"><button onClick={()=>setMobileMenu(!mobileMenu)} className="lg:hidden w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center font-black text-lg">☰</button><div className="bg-gray-900 p-2 rounded-2xl border-2 border-[#bf953f]"><img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-10 h-10 object-contain" alt="" style={{mixBlendMode:'screen'}} /></div><div><h1 className="font-black text-2xl italic tracking-tighter">Admin Hub</h1><p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Master System</p></div></div>
               <div className="flex items-center gap-4"><span className="text-[7px] font-bold text-gray-400 uppercase">Powered by Cactosoft</span><div className="bg-gray-900 text-white px-4 py-2 rounded-2xl font-black text-[10px] tracking-widest border-2 border-[#bf953f]">ROOT ACCESS</div><button onClick={onLogout} className="text-red-500 font-black text-xs uppercase border-2 border-red-500 px-4 py-2 rounded-2xl hover:bg-red-500 hover:text-white transition-all">Exit</button></div>
             </div>
           </header>
