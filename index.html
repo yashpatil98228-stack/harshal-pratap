@@ -103,6 +103,7 @@
     /* ========== TEACHER DASHBOARD ========== */
     const TeacherDashboard = ({ onLogout, user, onAddStudent }) => {
       const [view, setView] = useState('overview');
+      const [mobileMenu, setMobileMenu] = useState(false);
       const [lang, setLang] = useState('en');
       const tLabels = {
         en:['Daily Schedule','Take Attendance','Register Student','Upload Docs','Exam & Results','Weekly Schedule','About Me'],
@@ -166,7 +167,7 @@
         <div className="min-h-screen bg-gray-50 flex flex-col">
           <header className="bg-white border-b-4 border-gray-900 p-4">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
-              <div className="flex items-center gap-4"><img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-12 h-12 bg-black p-1 rounded-xl" alt="L" /><div><h1 className="font-black text-xl italic tracking-tight">Faculty Portal</h1><p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Pratap Vidhya Mandir</p></div></div>
+              <div className="flex items-center gap-4"><button onClick={()=>setMobileMenu(!mobileMenu)} className="lg:hidden w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-xl font-black">⋮</button><img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-12 h-12 bg-black p-1 rounded-xl" alt="L" /><div><h1 className="font-black text-xl italic tracking-tight">Faculty Portal</h1><p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Pratap Vidhya Mandir</p></div></div>
               <div className="flex items-center gap-3">
                 <select value={lang} onChange={e=>setLang(e.target.value)} className="text-[10px] font-black bg-gray-100 px-2 py-1 rounded-lg outline-none cursor-pointer">
                   <option value="en">🇬🇧 EN</option><option value="mr">🇮🇳 मराठी</option><option value="hi">🇮🇳 हिंदी</option>
@@ -178,8 +179,8 @@
           <main className="max-w-7xl mx-auto px-4 py-8 w-full flex-1">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* LEFT SIDEBAR */}
-              <div className="lg:col-span-3 space-y-3">
-                {nav.map(n=><div key={n.key} onClick={()=>setView(n.key)} className={`p-4 rounded-2xl cursor-pointer transition-all border-b-4 flex items-center gap-3 ${view===n.key?'bg-gray-900 text-white border-gray-700 shadow-xl':'bg-white text-gray-500 border-gray-100 hover:bg-gray-50'}`}><span className="text-2xl">{n.icon}</span><span className="font-black text-[11px] uppercase tracking-wider">{n.label}</span></div>)}
+              <div className={`lg:col-span-3 space-y-3 ${mobileMenu?'block':'hidden lg:block'}`}>
+                {nav.map(n=><div key={n.key} onClick={()=>{setView(n.key);setMobileMenu(false)}} className={`p-4 rounded-2xl cursor-pointer transition-all border-b-4 flex items-center gap-3 ${view===n.key?'bg-gray-900 text-white border-gray-700 shadow-xl':'bg-white text-gray-500 border-gray-100 hover:bg-gray-50'}`}><span className="text-2xl">{n.icon}</span><span className="font-black text-[11px] uppercase tracking-wider">{n.label}</span></div>)}
               </div>
               {/* RIGHT CONTENT */}
               <div className="lg:col-span-9">
@@ -372,6 +373,7 @@
       const [view, setView] = useState('overview');
       const [attSub, setAttSub] = useState(null);
       const [resTab, setResTab] = useState('ut1');
+      const [mobileMenu, setMobileMenu] = useState(false);
       const [lang, setLang] = useState('en');
       const sLabels = {
         en:['Home','Attendance','Results','Exams','Progress','Timetable','Notes & Syllabus','Teachers','About Me'],
@@ -390,7 +392,7 @@
         <div className="min-h-screen bg-[#f4fdf4] flex flex-col">
           <header className="bg-gray-900 border-b-4 border-mint p-4">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
-              <div className="flex items-center gap-4"><div className="bg-black p-2 rounded-2xl border-2 border-[#bf953f]"><img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-10 h-10 object-contain" alt="L" style={{mixBlendMode:'screen'}} /></div><div><h1 className="font-black text-xl italic text-white">Pratap Portal</h1><p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Student Dashboard</p></div></div>
+              <div className="flex items-center gap-4"><button onClick={()=>setMobileMenu(!mobileMenu)} className="lg:hidden w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-xl text-white font-black">⋮</button><div className="bg-black p-2 rounded-2xl border-2 border-[#bf953f]"><img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-10 h-10 object-contain" alt="L" style={{mixBlendMode:'screen'}} /></div><div><h1 className="font-black text-xl italic text-white">Pratap Portal</h1><p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Student Dashboard</p></div></div>
               <div className="flex items-center gap-3">
                 <select value={lang} onChange={e=>setLang(e.target.value)} className="text-[10px] font-black bg-white/10 text-white px-2 py-1 rounded-lg outline-none cursor-pointer">
                   <option value="en">🇬🇧 EN</option><option value="mr">🇮🇳 मराठी</option><option value="hi">🇮🇳 हिंदी</option>
@@ -402,8 +404,8 @@
           <main className="max-w-7xl mx-auto px-4 py-8 w-full flex-1">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               {/* LEFT SIDEBAR */}
-              <div className="lg:col-span-3 space-y-2">
-                {nav.map(n=><div key={n.key} onClick={()=>setView(n.key)} className={`p-4 rounded-2xl cursor-pointer transition-all border-b-4 flex items-center gap-3 ${view===n.key?'bg-gray-900 text-white border-gray-700 shadow-xl':'bg-white text-gray-500 border-gray-100 hover:bg-mint/10'}`}><span className="text-2xl">{n.icon}</span><span className="font-black text-[11px] uppercase tracking-wider">{n.label}</span></div>)}
+              <div className={`lg:col-span-3 space-y-2 ${mobileMenu?'block':'hidden lg:block'}`}>
+                {nav.map(n=><div key={n.key} onClick={()=>{setView(n.key);setMobileMenu(false)}} className={`p-4 rounded-2xl cursor-pointer transition-all border-b-4 flex items-center gap-3 ${view===n.key?'bg-gray-900 text-white border-gray-700 shadow-xl':'bg-white text-gray-500 border-gray-100 hover:bg-mint/10'}`}><span className="text-2xl">{n.icon}</span><span className="font-black text-[11px] uppercase tracking-wider">{n.label}</span></div>)}
               </div>
               {/* RIGHT CONTENT */}
               <div className="lg:col-span-9">
@@ -734,6 +736,7 @@
     /* ========== ADMIN DASHBOARD ========== */
     const AdminDashboard = ({ onLogout, user, onAddUser, onToggleBlock, onLoginAs }) => {
       const [view, setView] = useState('overview');
+      const [mobileMenu, setMobileMenu] = useState(false);
       const [allUsers, setAllUsers] = useState([]);
       const [announce, setAnnounce] = useState(JSON.parse(localStorage.getItem('pvm_announce')||'[]'));
       useEffect(()=>{setAllUsers(JSON.parse(localStorage.getItem('pvm_users')||'[]'))},[view]);
@@ -751,14 +754,14 @@
         <div className="min-h-screen bg-gray-100 flex flex-col">
           <header className="bg-white border-b-4 border-gray-900 py-4 px-6 shadow-xl">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="flex items-center gap-4"><div className="bg-gray-900 p-2 rounded-2xl border-2 border-[#bf953f]"><img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-10 h-10 object-contain" alt="" style={{mixBlendMode:'screen'}} /></div><div><h1 className="font-black text-2xl italic tracking-tighter">Admin Hub</h1><p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Master System</p></div></div>
+              <div className="flex items-center gap-4"><button onClick={()=>setMobileMenu(!mobileMenu)} className="lg:hidden w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-xl font-black">⋮</button><div className="bg-gray-900 p-2 rounded-2xl border-2 border-[#bf953f]"><img src="https://pratapvidyamandirchopda.org/newlogo.jpg" className="w-10 h-10 object-contain" alt="" style={{mixBlendMode:'screen'}} /></div><div><h1 className="font-black text-2xl italic tracking-tighter">Admin Hub</h1><p className="text-[10px] font-black text-[#bf953f] uppercase tracking-widest">Master System</p></div></div>
               <div className="flex items-center gap-4"><span className="text-[7px] font-bold text-gray-400 uppercase">Powered by Cactosoft</span><div className="bg-gray-900 text-white px-4 py-2 rounded-2xl font-black text-[10px] tracking-widest border-2 border-[#bf953f]">ROOT ACCESS</div><button onClick={onLogout} className="text-red-500 font-black text-xs uppercase border-2 border-red-500 px-4 py-2 rounded-2xl hover:bg-red-500 hover:text-white transition-all">Exit</button></div>
             </div>
           </header>
           <main className="max-w-7xl mx-auto px-4 py-8 w-full flex-1">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              <div className="lg:col-span-3 space-y-3">
-                {[{k:'overview',l:'📊 Dashboard'},{k:'users',l:'👥 All Users'},{k:'registry',l:'📝 Add Teacher'},{k:'addStudent',l:'🎓 Add Student'},{k:'announce',l:'📢 Announcements'},{k:'meeting',l:'🤝 Arrange Meeting'},{k:'attendance',l:'📅 Attendance'},{k:'settings',l:'⚙️ Settings'}].map(v=><div key={v.k} onClick={()=>setView(v.k)} className={`p-4 rounded-3xl cursor-pointer font-black text-[10px] tracking-[0.2em] transition-all border-b-4 flex items-center gap-2 ${view===v.k?'bg-gray-900 text-white border-gray-700 shadow-2xl':'bg-white text-gray-400 border-gray-100 hover:bg-gray-50'}`}>{v.l}</div>)}
+              <div className={`lg:col-span-3 space-y-3 ${mobileMenu?'block':'hidden lg:block'}`}>
+                {[{k:'overview',l:'📊 Dashboard'},{k:'users',l:'👥 All Users'},{k:'registry',l:'📝 Add Teacher'},{k:'addStudent',l:'🎓 Add Student'},{k:'announce',l:'📢 Announcements'},{k:'meeting',l:'🤝 Arrange Meeting'},{k:'attendance',l:'📅 Attendance'},{k:'settings',l:'⚙️ Settings'}].map(v=><div key={v.k} onClick={()=>{setView(v.k);setMobileMenu(false)}} className={`p-4 rounded-3xl cursor-pointer font-black text-[10px] tracking-[0.2em] transition-all border-b-4 flex items-center gap-2 ${view===v.k?'bg-gray-900 text-white border-gray-700 shadow-2xl':'bg-white text-gray-400 border-gray-100 hover:bg-gray-50'}`}>{v.l}</div>)}
               </div>
               <div className="lg:col-span-9">
                 {view==='overview' && (
